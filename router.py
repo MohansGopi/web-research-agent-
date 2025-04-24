@@ -14,13 +14,12 @@ control = agentController()
 # Define a root endpoint
 @app.get("/")
 async def root():
-    contextFromOnline = control.getSearchFromOnline()
-    return {"message": "Hello World", "context": contextFromOnline}
+    return {"message": "Hello World", "context": "contextFromOnline"}
 
 
 @app.post("/getData")
 async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
-    contextFromOnline = control.getSearchFromOnline(data)
+    contextFromOnline = await control.getSearchFromOnline(data)
     return {"context": contextFromOnline}
