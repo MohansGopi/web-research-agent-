@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from duckduckgo_search import DDGS
 from logger import logger
 from bs4 import BeautifulSoup
 import requests
@@ -34,9 +33,8 @@ class agentController:
         elif queryIntentAndKeywords['Intent'] == "definition" : query+=f"{os.getenv("DEFINITION_BASE_URL_STR")},inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
         elif queryIntentAndKeywords['Intent'] == "causal explanation" : query+=f"{os.getenv("CE_BASE_URL_STR")},inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
         elif queryIntentAndKeywords['Intent'] == "opinion" : query+=f"{os.getenv("OPIN_BASE_URL_STR")},inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
-        elif queryIntentAndKeywords['Intent'] == "commercial" : query+=f"{os.genenv("COMMERCIAL_BASE_URL_STR")},inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
+        elif queryIntentAndKeywords['Intent'] == "commercial" : query+=f"{os.getenv("COMMERCIAL_BASE_URL_STR")},inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
         elif queryIntentAndKeywords['Intent'] == "informational" : query+=f" inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
-        print(query)
         return query
 
 
@@ -53,20 +51,22 @@ class agentController:
             query = await self.queryAnalyser(query=query)
             # Use the DDGS (DuckDuckGo Search) API to get search results
             # Initialize the DDGS object
-            with DDGS() as ddgs:
-                results = ddgs.text(query, max_results=5)
+            print(query)
+            results = await agentService.getWebSearchData(query)
             # Process the results and return them in a structured format
             # Create a dictionary to store the results
             dataFromOnline = {}
             # Iterate through the results and extract relevant information
             # Store the results in the dictionary
             for r in results:
-                dataFromOnline[r['title']] = {
-                    'title': r['title'],
-                    'url': r['href'],
-                    'content in url': await getDataFromArticles(r['href']),
-                    'snippet': r['body']
-                }
+                print(r['href'])
+                if await agentService.checkIsAllowedToScrap(url=r['href'],user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"):
+                    dataFromOnline[r['title']] = {
+                        'title': r['title'],
+                        'url': r['href'],
+                        # 'content in url': await getDataFromArticles(r['href']),
+                        'snippet': r['body']
+                    }
             # return the results
             return dataFromOnline
         except Exception as e:

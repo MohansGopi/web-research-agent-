@@ -1,5 +1,12 @@
 import spacy
+from duckduckgo_search import DDGS
+import os
+import time
+import urllib.robotparser
+from dotenv import load_dotenv
+import random
 nlp = spacy.load("en_core_web_sm")
+load_dotenv()
 
 INTENT_PATTERNS = {
 "trend analysis": [
@@ -24,19 +31,35 @@ INTENT_PATTERNS = {
 "discount", "deal", "where", "to", "where to", "where to buy"
 ],
 "opinion": [
-"opinion", "review", "recommend", "suggest", "feedback", "thoughts",
+"opinion", "review", "recommend", "suggest", "feedback", "thoughts","best ",
 "thoughts on", "pros", "cons", "experience", "which is better","preffer"
 ],
 "recent news": [
 "latest", "breaking", "recent", "current", "today", "this week",
-"news", "news about", "update", "update on"
+"news", "news about", "update", "update on","now","happening","happen","happened"
 ],
 "informational": [
 "information", "information about", "details", "details on",
 "summary", "summary of", "facts", "background", "background on"
 ]
 }
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+}
 class services:
+    async def getWebSearchData(self,query:str):
+
+        ddgs = DDGS(headers=headers)
+        
+        try:
+            # Perform the search query
+            response = ddgs.text(query)
+            return response
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+
     async def getIntentAndKeywordsOfQuery(self,Query:str):
         """Get intent and keywords of the query"""
         query_lower = Query.lower().strip()
@@ -47,6 +70,17 @@ class services:
                 break
         intent_ = "informational" if intent_=="" else intent_
         return {"Intent":intent_,"Keywords":await getKeywordAndTopics(query_lower)}
+    
+    async def checkIsAllowedToScrap(self,url:str,user_agent:str):
+        rp = urllib.robotparser.RobotFileParser()
+        domain = url.split("/")[2]
+        print(domain)
+        robots_url = f"https://{domain}/robots.txt"
+        
+        rp.set_url(robots_url)
+        rp.read()
+        
+        return rp.can_fetch(user_agent, url)
     
 
 
