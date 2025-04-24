@@ -22,6 +22,5 @@ async def root():
 async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
-    print(data)
     contextFromOnline = control.getSearchFromOnline(data)
     return {"context": contextFromOnline}
