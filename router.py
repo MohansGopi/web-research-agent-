@@ -3,9 +3,9 @@ from controller import agentController
 
 # This is the main entry point for the FastAPI application.
 app = FastAPI(
-    title="web-research-agent -- initial phase",
+    title="web-research-agent -- final phase",
     description="A web research agent that can scrape and analyze web pages.",
-    version="0.1.0"
+    version="0.2.0"
 )
 
 # Initialize the agentController
@@ -22,4 +22,4 @@ async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
     contextFromOnline = await control.getSearchFromOnline(data)
-    return {"context": contextFromOnline}
+    return contextFromOnline

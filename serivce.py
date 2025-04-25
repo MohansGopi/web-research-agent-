@@ -5,8 +5,16 @@ import time
 import urllib.robotparser
 from dotenv import load_dotenv
 import random
+from transformers import pipeline
+from groq import Groq
+from logger import logger
+
+corrector = pipeline("text2text-generation", model="vennify/t5-base-grammar-correction")
 nlp = spacy.load("en_core_web_sm")
+modelForSimilarity = spacy.load("en_core_web_md")
 load_dotenv()
+
+MESSAGE =[]
 
 INTENT_PATTERNS = {
 "trend analysis": [
@@ -49,9 +57,9 @@ headers = {
 }
 class services:
     async def getWebSearchData(self,query:str):
-
-        ddgs = DDGS(headers=headers)
+        """Search on web and return the links and snippets"""
         
+        ddgs = DDGS(headers=headers)
         try:
             # Perform the search query
             response = ddgs.text(query)
@@ -69,12 +77,12 @@ class services:
                 intent_ = intent
                 break
         intent_ = "informational" if intent_=="" else intent_
-        return {"Intent":intent_,"Keywords":await getKeywordAndTopics(query_lower)}
+        return {"Intent":intent_,"Keywords":await self.getKeywordAndTopics(query_lower)}
     
     async def checkIsAllowedToScrap(self,url:str,user_agent:str):
+        """check the site allows to scrap their data"""
         rp = urllib.robotparser.RobotFileParser()
         domain = url.split("/")[2]
-        print(domain)
         robots_url = f"https://{domain}/robots.txt"
         
         rp.set_url(robots_url)
@@ -82,9 +90,53 @@ class services:
         
         return rp.can_fetch(user_agent, url)
     
+    async def checkSimilarity(self,queryList:list):
+        """Check the similarity between query and content in webpages"""
+        query_vecs =modelForSimilarity("".join(queryList))
+        user_query = modelForSimilarity("open source research pappers in 2024 bassed on healthcare")
 
+        similarities = user_query.similarity(query_vecs)
+        return similarities
+    
+    async def spellCorrector(self,query:str):
+        result = corrector(query, max_length=50)
+        query = result[0]["generated_text"]
+        return str(query)
 
-async def getKeywordAndTopics(Query:str):
-    """Get keywords related to the query"""
-    doc = nlp(Query)
-    return [token.text for token in doc if token.is_alpha and not token.is_stop]
+    async def getKeywordAndTopics(self,Query:str):
+        """Get keywords related to the query"""
+        doc = nlp(Query)
+        return [token.text for token in doc if token.is_alpha and not token.is_stop]
+    
+    async def getSummarizer(self,query:str,context=None,link=None):
+        """Get the summarized format for the query by context and it's usses gemma2-9b-it model"""
+        client = Groq(api_key=os.getenv("GROQ_API"))
+        try:
+            if not MESSAGE and context==None:return "Empty"
+            queryFormat = {
+                "role":"user",
+                "content":f"Make a summarized format of this context:{context} for this query{query}. if context is empty then answer with the previous chat, if previous chat empty return something went wrong"
+            }
+            MESSAGE.append(queryFormat)
+
+            completion = client.chat.completions.create(
+            model="gemma2-9b-it",
+            messages=MESSAGE,
+            temperature=1,
+            max_completion_tokens=1024,
+            top_p=1,
+            stream=True,
+            stop=None,)
+            answerText = ""
+            for chunk in completion:
+                answer = chunk.choices[0].delta.content or ""
+                ans_format = {
+                        "role": "assistant",
+                        "content": f"{answer}"
+                    }
+                MESSAGE.append(ans_format)
+                answerText+=answer
+            return {"status_code":200,"status":True,"result":{"answer":answerText,"webLink":link}}
+        except Exception as e:
+            logger.info(f"Error during summarizer:{e}")
+            return {"status_code":400,"status":False,"message":{"error":e}}
