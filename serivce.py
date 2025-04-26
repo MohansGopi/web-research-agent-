@@ -6,7 +6,6 @@ import urllib.robotparser
 from dotenv import load_dotenv
 import random
 from transformers import pipeline
-from groq import Groq
 from logger import logger
 
 corrector = pipeline("text2text-generation", model="vennify/t5-base-grammar-correction")
@@ -40,7 +39,7 @@ INTENT_PATTERNS = {
 ],
 "opinion": [
 "opinion", "review", "recommend", "suggest", "feedback", "thoughts","best ",
-"thoughts on", "pros", "cons", "experience", "which is better","preffer"
+"thoughts on", "pros", "cons", "experience", "which is better","preffer","could"
 ],
 "recent news": [
 "latest", "breaking", "recent", "current", "today", "this week",
@@ -90,12 +89,13 @@ class services:
         
         return rp.can_fetch(user_agent, url)
     
-    async def checkSimilarity(self,queryList:list):
+    async def checkSimilarity(self,context:list,query:str):
         """Check the similarity between query and content in webpages"""
-        query_vecs =modelForSimilarity("".join(queryList))
-        user_query = modelForSimilarity("open source research pappers in 2024 bassed on healthcare")
+        print(len("".join(context)))
+        contextvector =modelForSimilarity(("".join(context))[:1000000])
+        queryvector = modelForSimilarity(query)
 
-        similarities = user_query.similarity(query_vecs)
+        similarities = queryvector.similarity(contextvector)
         return similarities
     
     async def spellCorrector(self,query:str):
@@ -107,36 +107,4 @@ class services:
         """Get keywords related to the query"""
         doc = nlp(Query)
         return [token.text for token in doc if token.is_alpha and not token.is_stop]
-    
-    async def getSummarizer(self,query:str,context=None,link=None):
-        """Get the summarized format for the query by context and it's usses gemma2-9b-it model"""
-        client = Groq(api_key=os.getenv("GROQ_API"))
-        try:
-            if not MESSAGE and context==None:return "Empty"
-            queryFormat = {
-                "role":"user",
-                "content":f"Make a summarized format of this context:{context} for this query{query}. if context is empty then answer with the previous chat, if previous chat empty return something went wrong"
-            }
-            MESSAGE.append(queryFormat)
-
-            completion = client.chat.completions.create(
-            model="gemma2-9b-it",
-            messages=MESSAGE,
-            temperature=1,
-            max_completion_tokens=1024,
-            top_p=1,
-            stream=True,
-            stop=None,)
-            answerText = ""
-            for chunk in completion:
-                answer = chunk.choices[0].delta.content or ""
-                ans_format = {
-                        "role": "assistant",
-                        "content": f"{answer}"
-                    }
-                MESSAGE.append(ans_format)
-                answerText+=answer
-            return {"status_code":200,"status":True,"result":{"answer":answerText,"webLink":link}}
-        except Exception as e:
-            logger.info(f"Error during summarizer:{e}")
-            return {"status_code":400,"status":False,"message":{"error":e}}
+            

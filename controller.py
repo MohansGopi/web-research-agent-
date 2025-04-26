@@ -21,7 +21,7 @@ class agentController:
         query = await agentService.spellCorrector(query)
         print(query)
         queryIntentAndKeywords = await agentService.getIntentAndKeywordsOfQuery(query)
-
+        
         if queryIntentAndKeywords['Intent'] == "recent news" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv("NEWS_BASE_URL_STR")}"
         elif queryIntentAndKeywords['Intent'] == "trend analysis" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  today's date : {datetime.now().date()}"
         elif queryIntentAndKeywords['Intent'] == "instructional" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv("INSTRUCTION_BASE_URL_STR")}"
@@ -30,6 +30,7 @@ class agentController:
         elif queryIntentAndKeywords['Intent'] == "opinion" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv("OPIN_BASE_URL_STR")}"
         elif queryIntentAndKeywords['Intent'] == "commercial" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv("COMMERCIAL_BASE_URL_STR")}"
         elif queryIntentAndKeywords['Intent'] == "informational" : query+=f" inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
+        
         return query
 
 
@@ -42,10 +43,7 @@ class agentController:
             return "Enter something "
         logger.info("Searching online")
         try:
-            responseFromPreviousChat= await agentService.getSummarizer(Query)
-
-            if responseFromPreviousChat!="Empty":return responseFromPreviousChat
-
+           
             query = await self.queryAnalyser(query=Query)
             # Use the DDGS (DuckDuckGo Search) API to get search results
             # Initialize the DDGS object
@@ -59,17 +57,16 @@ class agentController:
             for r in results:
                 if await agentService.checkIsAllowedToScrap(url=r['href'],user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"):
                     contentFromWebPage = await getDataFromArticles(r['href'])
-                    similarityScore = await agentService.checkSimilarity(queryList=contentFromWebPage)
+                    similarityScore = await agentService.checkSimilarity(context=contentFromWebPage,query=Query)
                     if similarityScore>0.5:
                         highestScore = similarityScore if similarityScore>highestScore else highestScore
                         dataFromOnline[similarityScore] = {
                             'url': r['href'],
-                            'content in url': f"{r['body']}".join(contentFromWebPage) 
+                            'content in url': f"{r['body']}"+",".join(contentFromWebPage) 
                         }
                 else:logger.info("notAllowed to scrap")
-            summarizedFormat = await agentService.getSummarizer(Query,dataFromOnline[highestScore]['content in url'],dataFromOnline[highestScore]['url'])
             # return the results
-            return summarizedFormat
+            return dataFromOnline[highestScore]
         except Exception as e:
             logger.info(f"Error during search : {e}")
             return {"status_code":400,"error":e}
@@ -79,7 +76,8 @@ async def getDataFromArticles(url:str):
     pageHTML = requests.get(url=url)
     
     soup = BeautifulSoup(pageHTML.text,'html.parser')
-    
-    contentFromWebPages = [text.strip() for text in str(soup.text).split("\n") if text != ""]
+
+    paras = soup.find_all('p') 
+    contentFromWebPages = [str(text.text) for text in paras if text != ""]
 
     return contentFromWebPages
