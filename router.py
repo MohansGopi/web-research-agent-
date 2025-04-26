@@ -1,11 +1,20 @@
 from fastapi import FastAPI,Request
 from controller import agentController
+from fastapi.middleware.cors import CORSMiddleware
 
 # This is the main entry point for the FastAPI application.
 app = FastAPI(
     title="web-research-agent -- final phase",
     description="A web research agent that can scrape and analyze web pages.",
     version="0.2.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 👈 Allow all origins (You can make it specific later)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Initialize the agentController
