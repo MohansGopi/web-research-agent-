@@ -22,13 +22,13 @@ class agentController:
         print(query)
         queryIntentAndKeywords = await agentService.getIntentAndKeywordsOfQuery(query)
         
-        if queryIntentAndKeywords['Intent'] == "recent news" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv("NEWS_BASE_URL_STR")}"
+        if queryIntentAndKeywords['Intent'] == "recent news" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv('NEWS_BASE_URL_STR')}"
         elif queryIntentAndKeywords['Intent'] == "trend analysis" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  today's date : {datetime.now().date()}"
-        elif queryIntentAndKeywords['Intent'] == "instructional" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv("INSTRUCTION_BASE_URL_STR")}"
+        elif queryIntentAndKeywords['Intent'] == "instructional" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv('INSTRUCTION_BASE_URL_STR')}"
         elif queryIntentAndKeywords['Intent'] == "definition" : query+=f" inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
-        elif queryIntentAndKeywords['Intent'] == "causal explanation" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv("CE_BASE_URL_STR")}"
-        elif queryIntentAndKeywords['Intent'] == "opinion" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv("OPIN_BASE_URL_STR")}"
-        elif queryIntentAndKeywords['Intent'] == "commercial" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv("COMMERCIAL_BASE_URL_STR")}"
+        elif queryIntentAndKeywords['Intent'] == "causal explanation" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv('CE_BASE_URL_STR')}"
+        elif queryIntentAndKeywords['Intent'] == "opinion" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])} {os.getenv('OPIN_BASE_URL_STR')}"
+        elif queryIntentAndKeywords['Intent'] == "commercial" : query+=f"inurl:{random.choice(queryIntentAndKeywords['Keywords'])}  {os.getenv('COMMERCIAL_BASE_URL_STR')}"
         elif queryIntentAndKeywords['Intent'] == "informational" : query+=f" inurl:{random.choice(queryIntentAndKeywords['Keywords'])}"
         
         return query
