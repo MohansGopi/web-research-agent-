@@ -84,7 +84,7 @@ class agentController:
         try:
             Query = query.get('query', '').strip()
             if not Query:
-                return {"status_code": 400, "error": "Empty query provided"}
+                return {"status_code": 400, "content in url": "Empty query provided"}
 
             logger.info("Starting online search")
 
@@ -95,7 +95,7 @@ class agentController:
             results = await agentService.getWebSearchData(processed_query)
 
             if not results:
-                return {"status_code": 404, "error": "No search results found"}
+                return {"status_code": 404, "content in url": "No search results found"}
 
             urls = []
             for r in results:

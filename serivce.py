@@ -51,12 +51,12 @@ INTENT_PATTERNS = {
         "sale", "marketplace", "retail", "store"
     ],
     "opinion": [
-        "opinion", "review", "recommend", "suggest", 
+        "opinion", "review", "recommend", "suggest", "did","did you",
         "feedback", "thoughts on", "pros", "cons", "experience",
         "which is better", "prefer", "could", "would you recommend",
         "rating", "testimony", "impressions", "critic", 
         "advantages", "disadvantages", "viewpoint", 
-        "assessment", "personal take", "comparison"
+        "assessment", "personal take", "comparison","know","know about"
     ],
     "recent news": [
         "latest", "breaking", "recent", "current", "today", "today's",
