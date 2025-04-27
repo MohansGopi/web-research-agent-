@@ -32,6 +32,6 @@ async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
     contextFromOnline = await control.getSearchFromOnline(data)
-    summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline,number_sentence=10)
+    summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline['context in url'],number_sentence=10)
     summarizedTExt = await summarizedTextOBJ.summarizer_using_textrank_algorithm()
-    return summarizedTExt
+    return {'url':contextFromOnline['url'],'content in url':summarizedTExt}
