@@ -31,7 +31,10 @@ async def root():
 async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
-    contextFromOnline = await control.getSearchFromOnline(data)
-    summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline['context in url'],number_sentence=10)
-    summarizedTExt = await summarizedTextOBJ.summarizer_using_textrank_algorithm()
-    return {'url':contextFromOnline['url'],'content in url':summarizedTExt}
+    try:
+        contextFromOnline = await control.getSearchFromOnline(data)
+        summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline['content in url'],number_sentence=10)
+        summarizedTExt = await summarizedTextOBJ.summarizer_using_textrank_algorithm()
+        return {'url':contextFromOnline['url'],'content in url':summarizedTExt}
+    except:
+        return {'content in url':"Server busy - Try again after sometime"}
