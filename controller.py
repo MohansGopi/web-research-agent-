@@ -6,6 +6,8 @@ from serivce import services
 from datetime import datetime
 from dotenv import load_dotenv
 import os, random
+import asyncio
+import multiprocessing
 
 # Load environment variables
 load_dotenv()
@@ -13,6 +15,25 @@ load_dotenv()
 # Initialize service instance
 agentService = services()
 
+# --- Moved outside class: Safe for multiprocessing ---
+def getDataFromArticles(url: str):
+    """Scrape and return all paragraph text from a webpage."""
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        paras = soup.find_all('p')
+
+        # Extract text from paragraphs and clean
+        contentFromWebPages = [p.text for p in paras if p.text.strip() != '']
+        logger.info(f"Extracted content from {url}")
+        return contentFromWebPages
+    except Exception as e:
+        logger.error(f"Error extracting data from article {url}: {e}")
+        return []
+
+# --- Controller class ---
 class agentController:
     """Controller for handling user queries and online interactions."""
     
@@ -37,7 +58,7 @@ class agentController:
 
             # Modify the query based on detected intent
             if intent == "recent news":
-                query += f" inurl:{random_keyword} {os.getenv('NEWS_BASE_URL_STR', '')}"
+                query += f" today's date: {datetime.now().date()} inurl:{random_keyword} {os.getenv('NEWS_BASE_URL_STR', '')}"
             elif intent == "trend analysis":
                 query += f" inurl:{random_keyword} today's date: {datetime.now().date()}"
             elif intent == "instructional":
@@ -76,56 +97,60 @@ class agentController:
             if not results:
                 return {"status_code": 404, "error": "No search results found"}
 
+            urls = []
+            for r in results:
+                url = r.get('href')
+                if url:
+                    # Check if allowed to scrape
+                    is_allowed = await agentService.checkIsAllowedToScrap(
+                        url=url,
+                        user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"
+                    )
+                    if is_allowed:
+                        urls.append(url)
+                    else:
+                        logger.info(f"Not allowed to scrape: {url}")
+
+            if not urls:
+                return {"status_code": 404, "content in url": "No allowed URLs to scrape."}
+
+            logger.info(f"Found {len(urls)} allowed URLs. Starting multiprocessing scrape...")
+
+            # 🚀 Multiprocessing block
+            loop = asyncio.get_running_loop()
+            dataFromAllPages = await loop.run_in_executor(
+                None,
+                self.scrape_multiple_articles,
+                urls
+            )
+
             dataFromOnline = {}
             highestScore = 0
 
-            for r in results:
-                url = r.get('href')
-                if not url:
+            for url, contentFromWebPage in zip(urls, dataFromAllPages):
+                if not contentFromWebPage:
                     continue
 
-                # Check if allowed to scrape
-                if await agentService.checkIsAllowedToScrap(url=url, user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"):
-                    contentFromWebPage = await getDataFromArticles(url)
-                    
-                    if not contentFromWebPage:
-                        continue
-                    
-                    # Check similarity
-                    similarityScore = await agentService.checkSimilarity(context=contentFromWebPage, query=Query)
+                similarityScore = await agentService.checkSimilarity(context=contentFromWebPage, query=Query)
 
-                    if similarityScore > 0.5:
-                        highestScore = max(highestScore, similarityScore)
-                        dataFromOnline[similarityScore] = {
-                            'url': url,
-                            'content in url': f"{r.get('body', '')} " + ",".join(contentFromWebPage)
-                        }
-                else:
-                    logger.info(f"Not allowed to scrape: {url}")
+                if similarityScore > 0.5:
+                    highestScore = max(highestScore, similarityScore)
+                    dataFromOnline[similarityScore] = {
+                        'url': url,
+                        'content in url': ",".join(contentFromWebPage)
+                    }
 
             if not dataFromOnline:
-                return {"status_code": 404, "error": "No relevant results found"}
+                return {"status_code": 404, "content in url": "No relevant results found on internet too, can you please ask the question in a different way :)"}
 
             return dataFromOnline.get(highestScore, {})
-        
+
         except Exception as e:
             logger.error(f"Error during online search: {e}")
             return {"status_code": 500, "error": str(e)}
 
-async def getDataFromArticles(url: str):
-    """Scrape and return all paragraph text from a webpage."""
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-        paras = soup.find_all('p')
-
-        # Extract text from paragraphs and clean
-        contentFromWebPages = [p.get_text(strip=True) for p in paras if p.get_text(strip=True)]
-
-        return contentFromWebPages
-    except Exception as e:
-        logger.error(f"Error extracting data from article {url}: {e}")
-        return []
-
+    def scrape_multiple_articles(self, urls):
+        """Helper to scrape multiple articles using multiprocessing."""
+        with multiprocessing.Pool(processes=min(8, len(urls))) as pool:
+            results = pool.map(getDataFromArticles, urls)
+        return results
