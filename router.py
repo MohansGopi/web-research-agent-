@@ -1,12 +1,13 @@
 from fastapi import FastAPI,Request
 from controller import agentController
 from fastapi.middleware.cors import CORSMiddleware
+from summarizer import Text_summarization
 
 # This is the main entry point for the FastAPI application.
 app = FastAPI(
-    title="web-research-agent -- final phase",
+    title="web-research-agent -- deployment phase",
     description="A web research agent that can scrape and analyze web pages.",
-    version="0.2.0"
+    version="0.3.0"
 )
 
 app.add_middleware(
@@ -31,4 +32,6 @@ async def get_data(query: Request):
     """Endpoint to get data from the agentController."""
     data = await query.json()
     contextFromOnline = await control.getSearchFromOnline(data)
-    return contextFromOnline
+    summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline,number_sentence=10)
+    summarizedTExt = await summarizedTextOBJ.summarizer_using_textrank_algorithm()
+    return summarizedTExt
