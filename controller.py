@@ -142,8 +142,14 @@ class agentController:
 
             if not dataFromOnline:
                 return {"status_code": 404, "content in url": "No relevant results found on internet too, can you please ask the question in a different way :)"}
-
-            return dataFromOnline.get(highestScore, {})
+            
+            summarizedText = ""
+            for sentence in dataFromOnline.get(highestScore,{})['content in url'].split(". "):
+                similarityScore = await agentService.checkSimilarity(context=sentence, query=Query)
+                if similarityScore>0.5:
+                    summarizedText += str(sentence)+". "
+            
+            return {'url':dataFromOnline[highestScore]['url'],'content in url':summarizedText}
 
         except Exception as e:
             logger.error(f"Error during online search: {e}")

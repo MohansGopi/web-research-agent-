@@ -33,8 +33,7 @@ async def get_data(query: Request):
     data = await query.json()
     try:
         contextFromOnline = await control.getSearchFromOnline(data)
-        summarizedTextOBJ = Text_summarization(text_without_summarization=contextFromOnline['content in url'],number_sentence=10)
-        summarizedTExt = await summarizedTextOBJ.summarizer_using_textrank_algorithm()
-        return {'url':contextFromOnline['url'],'content in url':summarizedTExt}
+
+        return contextFromOnline
     except:
         return {'content in url':"Server busy - Try again after sometime"}
