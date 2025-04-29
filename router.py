@@ -21,11 +21,7 @@ app.add_middleware(
 # Initialize the agentController
 control = agentController()
 
-# Define a root endpoint
-@app.get("/")
-async def root():
-    return {"message": "Hello World", "context": "contextFromOnline"}
-
+# Define a api endpoint
 
 @app.post("/getData")
 async def get_data(query: Request):
