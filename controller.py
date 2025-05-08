@@ -105,7 +105,7 @@ class agentController:
 
                 similarityScore = await agentService.checkSimilarity(context=contentFromWebPage, query=Query)
 
-                if similarityScore > 0.5:
+                if similarityScore > highestScore:
                     highestScore = max(highestScore, similarityScore)
                     dataFromOnline[similarityScore] = {
                         'url': url,
@@ -114,14 +114,6 @@ class agentController:
 
             if not dataFromOnline:
                 return {"status_code": 404, "content in url": "No relevant results found on internet too, can you please ask the question in a different way :)"}
-            
-            summarizedText = ""
-            no_sent=0
-            for sentence in dataFromOnline.get(highestScore,{})['content in url'].split(". "):
-                similarityScore = await agentService.checkSimilarity(context=sentence, query=Query)
-                if similarityScore>0.5 and no_sent <=5:
-                    summarizedText += str(sentence)+". "
-                    no_sent+=1
 
             return {'url':dataFromOnline[highestScore]['url'],'content in url':summarizedText}
 
