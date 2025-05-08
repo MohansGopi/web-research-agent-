@@ -70,7 +70,8 @@ INTENT_PATTERNS = {
         "facts", "background on", "overview", "insights on",
         "data about", "statistics on", "knowledge about", 
         "brief on", "key points", "reference to", 
-        "report on", "context of", "study of", "snapshot of"
+        "report on", "context of", "study of", "snapshot of","list out","list",
+        "best places"
     ]
 }
 
