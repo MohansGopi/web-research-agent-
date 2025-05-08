@@ -46,34 +46,6 @@ class agentController:
             query = await agentService.spellCorrector(query)
             print(query)
 
-            # Get query intent and keywords
-            queryIntentAndKeywords = await agentService.getIntentAndKeywordsOfQuery(query)
-            keywords = queryIntentAndKeywords.get('Keywords', [])
-
-            if not keywords:
-                return query  # If no keywords, return corrected query directly
-
-            random_keyword = random.choice(keywords)
-            intent = queryIntentAndKeywords.get('Intent', 'informational')
-
-            # Modify the query based on detected intent
-            if intent == "recent news":
-                query += f" today's date: {datetime.now().date()} inurl:{random_keyword} {os.getenv('NEWS_BASE_URL_STR', '')}"
-            elif intent == "trend analysis":
-                query += f" inurl:{random_keyword} today's date: {datetime.now().date()}"
-            elif intent == "instructional":
-                query += f" inurl:{random_keyword} {os.getenv('INSTRUCTION_BASE_URL_STR', '')}"
-            elif intent == "definition":
-                query += f" inurl:{random_keyword}"
-            elif intent == "causal explanation":
-                query += f" inurl:{random_keyword} {os.getenv('CE_BASE_URL_STR', '')}"
-            elif intent == "opinion":
-                query += f" inurl:{random_keyword} {os.getenv('OPIN_BASE_URL_STR', '')}"
-            elif intent == "commercial":
-                query += f" inurl:{random_keyword} {os.getenv('COMMERCIAL_BASE_URL_STR', '')}"
-            elif intent == "informational":
-                query += f" inurl:{random_keyword}"
-
             return query
         except Exception as e:
             logger.error(f"Error during query analysis: {e}")

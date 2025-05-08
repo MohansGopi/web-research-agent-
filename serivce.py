@@ -17,64 +17,6 @@ ddgs = DDGS(headers={
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36"
 })
 
-# Intent patterns for classification
-INTENT_PATTERNS = {
-    "trend analysis": [
-        "how", "has", "have", "change", "changed", "trend", "evolved",
-        "growth", "evolution", "over time", "progress", "shift", 
-        "improvement", "decline", "rise", "fall", "trajectory", 
-        "pattern", "transformation", "variation", "fluctuation"
-    ],
-    "instructional": [
-        "how to", "steps", "method", "process", "way to", "guide",
-        "build", "create", "implement", "set up", "instruction",
-        "tutorial", "procedure", "workflow", "blueprint", 
-        "manual", "strategy", "roadmap", "plan", "directions"
-    ],
-    "definition": [
-        "what is","who", "who is", "define", "definition of", "meaning of", 
-        "explain", "describe", "clarify", "overview", 
-        "elaborate", "interpret", "understanding of", 
-        "explanation for", "concept of", "describe the meaning"
-    ],
-    "causal explanation": [
-        "why is", "why does", "cause of", "reason for", 
-        "what causes", "origin of", "explanation for", 
-        "due to", "because of", "trigger for", "factor behind",
-        "drivers of", "underlying cause", "root cause"
-    ],
-    "commercial": [
-        "buy", "purchase", "price", "cost", "best", "top", 
-        "cheap", "affordable", "discount", "deal", 
-        "where to buy", "sell", "shop", "order", "budget", 
-        "value for money", "offer", "promotion", "low price",
-        "sale", "marketplace", "retail", "store"
-    ],
-    "opinion": [
-        "opinion", "review", "recommend", "suggest", "did","did you",
-        "feedback", "thoughts on", "pros", "cons", "experience",
-        "which is better", "prefer", "could", "would you recommend",
-        "rating", "testimony", "impressions", "critic", 
-        "advantages", "disadvantages", "viewpoint", 
-        "assessment", "personal take", "comparison","know","know about"
-    ],
-    "recent news": [
-        "latest", "breaking", "recent", "current", "today", "today's",
-        "this week", "news about", "update on", "now", 
-        "happening", "happened", "currently", "new update", 
-        "ongoing", "emerging", "developing", "this month",
-        "fresh news", "hot news", "headline"
-    ],
-    "informational": [
-        "information about", "details on", "summary of", 
-        "facts", "background on", "overview", "insights on",
-        "data about", "statistics on", "knowledge about", 
-        "brief on", "key points", "reference to", 
-        "report on", "context of", "study of", "snapshot of","list out","list",
-        "best places"
-    ]
-}
-
 
 class services:
     """Service class to perform web search, NLP processing, and similarity checking."""
@@ -86,28 +28,6 @@ class services:
         except Exception as e:
             logger.error(f"Error during web search for '{query}': {e}")
             return []
-
-    async def getIntentAndKeywordsOfQuery(self, Query: str):
-        """Detect the user's query intent and extract keywords."""
-        try:
-            query_lower = Query.lower().strip()
-            intent_ = next((intent for intent, patterns in INTENT_PATTERNS.items()
-                            if any(p in query_lower for p in patterns)), "informational")
-            
-            # Parallel execution: correct spelling + extract keywords
-            corrected_query_task = self.spellCorrector(Query)
-            keywords_task = self.getKeywordAndTopics(Query)
-
-            corrected_query, keywords = await asyncio.gather(corrected_query_task, keywords_task)
-
-            return {
-                "Intent": intent_,
-                "Keywords": keywords,
-                "CorrectedQuery": corrected_query
-            }
-        except Exception as e:
-            logger.error(f"Error processing intent/keywords: {e}")
-            return {"Intent": "informational", "Keywords": [], "CorrectedQuery": Query}
 
     async def checkIsAllowedToScrap(self, url: str, user_agent: str):
         """Check if scraping is allowed based on robots.txt rules."""
