@@ -115,8 +115,9 @@ class agentController:
             if not dataFromOnline:
                 return {"status_code": 404, "content in url": "No relevant results found on internet too, can you please ask the question in a different way :)"}
             
-            summarized = await agentService.summarizer(Query,dataFromOnline[highestScore]['content in url'])
-            return {'url':dataFromOnline[highestScore]['url'],'content in url':summarized}
+            summarized = str(await agentService.summarizer(Query,dataFromOnline[highestScore]['content in url']))
+            html = await agentService.convert_to_html(summarized)
+            return {'url':dataFromOnline[highestScore]['url'],'content in url':html.replace("\n","<br>")}
 
         except Exception as e:
             logger.error(f"Error during online search: {e}")

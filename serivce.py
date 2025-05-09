@@ -7,6 +7,7 @@ from transformers import pipeline
 from logger import logger
 import os
 from groq import Groq
+import re
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 # Load environment variables
@@ -95,3 +96,38 @@ class services:
             return chat_completion.choices[0].message.content
         except:
             return context
+    
+    async def convert_to_html(self,text:str):
+        lines = text.strip().split('\n')
+        html = ""
+        for line in lines:
+            # Section titles (bold and colon)
+            if re.match(r"\*\*(.+?)\*\*:", line):
+                section_title = re.findall(r"\*\*(.+?)\*\*:", line)[0]
+                html += f"<h2>{section_title}</h2>\n"
+
+            # Subsection headers like 1. Tokyo - ...
+            elif re.match(r"\d+\.\s.+? - ", line):
+                title, desc = line.split(" - ", 1)
+                html += f"<h3>{title.strip()}</h3>\n<p>{desc.strip()}</p>\n"
+
+            # Bulleted items
+            elif line.strip().startswith("* "):
+                if not html.endswith("<ul>\n"):
+                    html += "<ul>\n"
+                html += f"<li>{line.strip()[2:]}</li>\n"
+
+            # Empty line - used to close any open <ul>
+            elif line.strip() == "":
+                if html.endswith("<ul>\n") or "<li>" in html[-10:]:
+                    html += "</ul>\n"
+
+            # Fallback: plain paragraph
+            else:
+                html += f"<p>{line.strip()}</p>\n"
+
+        # Close list if open
+        if html.endswith("<ul>\n") or "<li>" in html[-10:]:
+            html += "</ul>\n"
+
+        return html
