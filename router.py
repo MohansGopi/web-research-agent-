@@ -1,7 +1,6 @@
 from fastapi import FastAPI,Request
 from controller import agentController
 from fastapi.middleware.cors import CORSMiddleware
-from summarizer import Text_summarization
 
 # This is the main entry point for the FastAPI application.
 app = FastAPI(

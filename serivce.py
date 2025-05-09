@@ -5,10 +5,10 @@ import asyncio
 from dotenv import load_dotenv
 from transformers import pipeline
 from logger import logger
-from transformers import pipeline
+import os
+from groq import Groq
 
-# Load the model
-pipe = pipeline("text-generation", model="allenai/OLMo-2-0425-1B")
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 # Load environment variables
 load_dotenv()
 
@@ -83,3 +83,15 @@ class services:
         except Exception as e:
             logger.error(f"Error extracting keywords: {e}")
             return []
+    
+    async def summarizer(self,query:str,context:str):
+        """Summarize the context by the query"""
+        try:
+            chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": f"Query:{query}\nContext:{context}"}
+            ],
+            model="llama3-70b-8192",)
+            return chat_completion.choices[0].message.content
+        except:
+            return context
