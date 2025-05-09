@@ -83,13 +83,3 @@ class services:
         except Exception as e:
             logger.error(f"Error extracting keywords: {e}")
             return []
-    
-    async def summarizer(self,query:str,context:str):
-        """"Summaize the context with the query by help of own llm"""
-        try:
-            prompt = f"Context:\n{context[:4096]}\n\nQuestion: {query}\n\formated:"
-            output = pipe(prompt, max_new_tokens=150)
-            return str(output[0]['generated_text'].split("\n"))
-        except Exception as E:
-            logger.error(f"Error while summarize the context :{E}")
-            return context
