@@ -21,6 +21,8 @@ ddgs = DDGS(headers={
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36"
 })
 
+message = []
+
 
 class services:
     """Service class to perform web search, NLP processing, and similarity checking."""
@@ -87,12 +89,14 @@ class services:
     
     async def summarizer(self,query:str,context:str):
         """Summarize the context by the query"""
+        message.append({"role": "user", "content": f"Query:{query}\nContext:{context}"})
         try:
             chat_completion = client.chat.completions.create(
-            messages=[
-                {"role": "user", "content": f"Query:{query}\nContext:{context}"}
-            ],
+            messages=message,
             model="llama3-70b-8192",)
+            message.append({
+            "role": "assistant",
+            "content": chat_completion.choices[0].message.content})
             return chat_completion.choices[0].message.content
         except:
             return context
